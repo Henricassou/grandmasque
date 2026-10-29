@@ -1,0 +1,813 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>
+<title>Painel São Paulo Grand Masqué</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">
+<style id="gm-style">
+/* Layout: cabeçalho + abas; aba Retroplanejamento = KPIs, filtro por fase e Gantt semanal com todos os dias */
+:root{
+  --bg:#f5f0e8; --surface:#fffdf9; --surface2:#ece6da; --line:#d8d0c1;
+  --fg:#080808; --muted:#5c5c5c; --accent:#d2002d; --accent-fg:#ffffff; --accent-soft:#f7d9de;
+  --gold:#b88e52; --gold-soft:#efe3cf; --wine:#460810;
+  --done:#8a857d; --hol:#e4ddce;
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"DM Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"DM Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#080808; --surface:#131110; --surface2:#1d1a18; --line:#322d29;
+  --fg:#f5f0e8; --muted:#a8a199; --accent:#ec2a50; --accent-fg:#ffffff; --accent-soft:#3a0c16;
+  --gold:#c9a063; --gold-soft:#2d2417; --wine:#7a1624;
+  --done:#6e6962; --hol:#24201d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#080808; --surface:#131110; --surface2:#1d1a18; --line:#322d29;
+  --fg:#f5f0e8; --muted:#a8a199; --accent:#ec2a50; --accent-fg:#ffffff; --accent-soft:#3a0c16;
+  --gold:#c9a063; --gold-soft:#2d2417; --wine:#7a1624;
+  --done:#6e6962; --hol:#24201d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-block:0 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1180px;margin:0 auto}
+header{padding-block:24px 8px;display:flex;flex-wrap:wrap;gap:8px 24px;align-items:end;justify-content:space-between}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:-.02em;margin:0;line-height:1.1;text-wrap:balance}
+.sub{color:var(--muted);margin:6px 0 0;max-width:62ch}
+.stamp{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--bg);display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-top:12px}
+nav button{font:inherit;font-weight:500;background:none;border:0;color:var(--muted);padding:12px 14px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.page{padding-top:24px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;min-width:0}
+.kpi span{display:block;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kpi b{display:block;font-family:var(--f-display);font-size:30px;font-weight:700;margin:4px 0 2px;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi b.bad{color:var(--accent)}
+.kpi i{display:block;font-style:normal;font-size:13px;color:var(--muted)}
+.tools{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between;margin-top:24px}
+.seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.seg button{font:inherit;font-size:13px;font-weight:500;background:none;border:0;color:var(--muted);padding:8px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--fg);color:var(--bg)}
+.seg button:focus-visible{outline-offset:-2px}
+.go{display:flex;gap:8px}
+.go button{font:inherit;font-size:13px;font-weight:500;background:var(--surface);border:1px solid var(--line);color:var(--fg);border-radius:10px;padding:8px 14px;cursor:pointer}
+.go button:hover{border-color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:14px 0 10px;font-size:12px;color:var(--muted);font-family:var(--f-mono)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{display:inline-block;width:22px;height:10px;border-radius:3px}
+.sw.doing{background:var(--fg)} .sw.done{background:var(--done)} .sw.late{background:var(--accent)}
+.sw.todo{border:1px dashed var(--muted);background:color-mix(in srgb,var(--fg) 8%,transparent)}
+.sw.hol{width:12px;height:12px;background:repeating-linear-gradient(45deg,var(--hol),var(--hol) 3px,transparent 3px,transparent 6px);border:1px solid var(--line)}
+.sw.car{width:12px;height:12px;background:var(--gold-soft);border:1px solid var(--gold)}
+.dm{display:inline-block;width:10px;height:10px;transform:rotate(45deg);background:var(--gold);border-radius:1px}
+.dm.ev{background:var(--accent)}
+.ln{display:inline-block;width:2px;height:12px;background:var(--accent)}
+.cardw{position:relative}
+.gts{overflow:auto;max-height:calc(100vh - 120px);max-height:calc(100dvh - 120px);min-height:320px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+.gt{--dw:26px;--c1:310px;--c2:72px;--c3:58px;--L:calc(var(--c1) + var(--c2) + var(--c3));position:relative;width:max-content;min-width:100%;font-size:13px}
+.r{display:grid;grid-template-columns:var(--c1) var(--c2) var(--c3) calc(var(--n)*var(--dw))}
+.c{position:sticky;z-index:5;background:var(--surface);padding:0 10px;display:flex;align-items:center;min-width:0;border-bottom:1px solid var(--line)}
+.c1{left:0}.c2{left:var(--c1);font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.c3{left:calc(var(--c1) + var(--c2));font-family:var(--f-mono);font-size:11.5px;color:var(--muted);border-right:1px solid var(--line)}
+.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.nm.m{font-weight:600}
+.nm .dm{margin-right:9px;flex:none}
+.row{height:38px}
+.tl{position:relative;height:38px;border-bottom:1px solid var(--line);
+  background-image:repeating-linear-gradient(90deg,transparent 0 calc(var(--dw)*5),color-mix(in srgb,var(--fg) 5%,transparent) calc(var(--dw)*5) calc(var(--dw)*7)),repeating-linear-gradient(90deg,transparent 0 calc(var(--dw) - 1px),color-mix(in srgb,var(--fg) 7%,transparent) calc(var(--dw) - 1px) var(--dw))}
+.band{grid-column:1/-1;height:30px;background:var(--surface2);border-bottom:1px solid var(--line);font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg);display:flex;align-items:center}
+.band span{position:sticky;left:12px;display:inline-flex;gap:10px;align-items:center}
+.band em{font-style:normal;color:var(--muted);letter-spacing:0;text-transform:none}
+.head{position:sticky;top:0;z-index:8;background:var(--surface)}
+.head .c{background:var(--surface2);border-bottom:0;color:var(--muted);font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.head .r{border-bottom:1px solid var(--line)}
+.hrow{display:flex;background:var(--surface)}
+.hrow.w{height:26px}.hrow.l{height:20px}.hrow.n{height:24px;border-top:0}
+.wk{flex:none;width:calc(var(--dw)*7);border-left:1px solid var(--line);font-family:var(--f-mono);font-size:11px;padding:0 8px;display:flex;align-items:center;white-space:nowrap;overflow:hidden;color:var(--fg);font-weight:500}
+.wk.evw{background:var(--accent-soft)}
+.d{flex:none;width:var(--dw);text-align:center;font-family:var(--f-mono);font-size:10.5px;color:var(--muted);display:flex;align-items:center;justify-content:center;border-left:1px solid color-mix(in srgb,var(--fg) 7%,transparent)}
+.hrow.n .d{font-size:11.5px;color:var(--fg)}
+.d.we{background:var(--surface2)}
+.d.hol{background:repeating-linear-gradient(45deg,var(--hol),var(--hol) 3px,transparent 3px,transparent 6px)}
+.d.car{background:var(--gold-soft);color:var(--fg)}
+.d.evt{background:var(--accent);color:var(--accent-fg);font-weight:600}
+.d.hj span{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--fg);color:var(--bg);font-weight:600}
+.ov{position:absolute;top:0;bottom:0;left:var(--L);width:calc(var(--n)*var(--dw));pointer-events:none}
+.ov.a{z-index:1}.ov.b{z-index:4}
+.ov i{position:absolute;top:0;bottom:0;width:var(--dw)}
+.ov i.hol{background:repeating-linear-gradient(45deg,var(--hol),var(--hol) 3px,transparent 3px,transparent 6px);opacity:.8}
+.ov i.car{background:color-mix(in srgb,var(--gold) 14%,transparent)}
+.ov i.evt{background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.ov u{position:absolute;top:0;bottom:0;width:2px;text-decoration:none;background:var(--fg)}
+.ov u.ev{background:var(--accent)}
+.bar{position:absolute;top:9px;height:20px;border-radius:5px;z-index:2;overflow:hidden;cursor:default}
+.bar i{display:block;height:100%}
+.bar.todo{background:color-mix(in srgb,var(--fg) 8%,transparent);border:1px dashed var(--muted)}
+.bar.doing{background:color-mix(in srgb,var(--fg) 18%,transparent)} .bar.doing i{background:var(--fg)}
+.bar.done{background:var(--done)} .bar.done i{background:var(--done)}
+.bar.late{background:color-mix(in srgb,var(--accent) 22%,transparent)} .bar.late i{background:var(--accent)}
+.ms{position:absolute;top:10px;width:18px;height:18px;z-index:2;transform:rotate(45deg);background:var(--gold);border-radius:2px;cursor:default;margin-left:-9px}
+.ms.ev{background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 25%,transparent)}
+.ms.done{background:var(--done)}
+.ms.late{background:var(--accent)}
+.mt{position:absolute;top:0;height:38px;display:flex;align-items:center;font-family:var(--f-mono);font-size:11px;color:var(--muted);z-index:2;white-space:nowrap;pointer-events:none}
+.tip{position:absolute;z-index:30;background:var(--fg);color:var(--bg);border-radius:10px;padding:8px 12px;font-size:12.5px;line-height:1.4;max-width:300px;pointer-events:none;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+.tip b{display:block;font-weight:600;font-size:13px;margin-bottom:2px}
+.tip span{display:block;font-family:var(--f-mono);font-size:11px;opacity:.8}
+.tip p{margin:4px 0 0;opacity:.9}
+.note{font-size:13px;color:var(--muted);margin:12px 0 0;max-width:80ch}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:28px;max-width:760px}
+.empty h2{font-family:var(--f-display);margin:0 0 6px;font-size:22px}
+.empty p{margin:6px 0;color:var(--muted)}
+.tag{display:inline-block;font-family:var(--f-mono);font-size:12px;padding:2px 8px;border-radius:999px;background:var(--gold-soft);color:var(--gold)}
+@media(max-width:700px){
+  .gt{--c1:158px;--L:var(--c1)}
+  .r{grid-template-columns:var(--c1) calc(var(--n)*var(--dw))}
+  .c2,.c3{display:none}
+  .c1{border-right:1px solid var(--line);padding:0 8px;font-size:12px}
+  .nm{white-space:normal;line-height:1.2;font-size:12px}
+}
+body{margin:0}
+.hact{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-bottom:8px;position:relative}
+.eye{display:inline-flex;align-items:center;gap:8px;font:inherit;font-size:13px;font-weight:500;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:8px 12px;cursor:pointer}
+.eye svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.eye[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.eye:hover{border-color:var(--accent)}
+.pop{position:absolute;right:0;top:calc(100% + 6px);z-index:40;width:min(420px,calc(100vw - 32px));background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 12px 40px rgba(0,0,0,.2)}
+.pop h3{font-family:var(--f-display);font-size:16px;margin:0 0 4px}
+.pop p{margin:4px 0 10px;font-size:13px;color:var(--muted)}
+.pop .lk{display:flex;gap:8px}
+.pop input{flex:1;min-width:0;font:inherit;font-family:var(--f-mono);font-size:12px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)}
+.btn{font:inherit;font-size:13px;font-weight:500;background:var(--fg);color:var(--bg);border:1px solid var(--fg);border-radius:8px;padding:8px 14px;cursor:pointer}
+.btn.sec{background:var(--surface);color:var(--fg);border-color:var(--line)}
+.btn.bad{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn:disabled{opacity:.5;cursor:default}
+.btn:hover:not(:disabled){border-color:var(--accent)}
+.pop .row2{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.hint{font-size:13px;color:var(--muted);margin:14px 0 0;display:flex;gap:8px;align-items:center}
+.hint .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.bar.ed,.ms.ed{cursor:grab}
+.bar.ed:active,.ms.ed:active{cursor:grabbing}
+.bar s{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;text-decoration:none;z-index:3}
+.bar s.hl{left:0}.bar s.hr{right:0}
+.bar.ed s:hover{background:color-mix(in srgb,var(--accent) 45%,transparent)}
+.bar.sel,.ms.sel{outline:2px solid var(--accent);outline-offset:2px}
+.c1.ed{cursor:pointer}
+.c1.ed:hover .nm{text-decoration:underline}
+.panel{margin-top:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.panel h3{font-family:var(--f-display);font-size:18px;margin:0 0 12px}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.fg label{display:flex;flex-direction:column;gap:4px;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:0}
+.fg label.w2{grid-column:span 2}
+.fg input,.fg select,.fg textarea{font:inherit;font-size:14px;letter-spacing:0;text-transform:none;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0;width:100%}
+.fg textarea{min-height:64px;resize:vertical}
+.panel .acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;align-items:center}
+.panel .acts .sp{flex:1}
+.savebar{position:fixed;left:max(16px,env(safe-area-inset-left,0px));right:max(16px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:50;max-width:760px;margin:0 auto;background:var(--fg);color:var(--bg);border-radius:14px;padding:10px 12px 10px 16px;display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.savebar b{font-weight:600}
+.savebar .sp{flex:1;min-width:120px;font-size:13px}
+.savebar .btn{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.savebar .btn.sec{background:transparent;color:var(--bg);border-color:color-mix(in srgb,var(--bg) 40%,transparent)}
+.toast{margin-top:12px;font-size:13px;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--fg);border:1px solid var(--accent)}
+:root{--done:#2f8f5b}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--done:#3fae74}}
+:root[data-theme="dark"]{--done:#3fae74}
+.gt{--c3:126px}
+.c3{white-space:nowrap}
+.bar.done i{background:var(--done)}
+
+.mata{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;font-weight:500;color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:10px;padding:7px 12px;background:var(--surface)}
+.mata:hover{border-color:var(--accent)}
+.stamp{display:flex;flex-direction:column;align-items:flex-start}
+.mlist,.mtog{display:none}
+@media(max-width:700px){
+  .mlist{display:block;margin-top:12px}
+  .mtog{display:block;width:100%;margin-top:12px;padding:10px;border:1px solid var(--line);border-radius:10px;background:transparent;color:inherit;font:inherit;font-size:13px}
+  #app .cardw{display:none}
+  #app.showg .cardw{display:block}
+  #app.showg .mlist{display:none}
+  .mlist h4{margin:18px 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+  .mc{border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:8px}
+  .mc b{display:block;font-size:14px;line-height:1.3}
+  .mc span{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+  .mc .bt{height:4px;border-radius:4px;background:var(--line);margin-top:8px;overflow:hidden}
+  .mc .bt i{display:block;height:100%;background:var(--done)}
+  .mc.doing .bt i{background:var(--gold)}
+  .mc.late .bt i{background:#c0392b}
+  .mc .sw{display:inline-block;vertical-align:middle;margin-right:5px}
+  .tools .go{display:none}
+}
+
+/* ---- Jornada do Público ---- */
+.hyp{margin:16px 0 0;background:var(--gold-soft);border:1px solid var(--gold);border-radius:12px;padding:10px 14px;font-size:13px;color:var(--fg);max-width:92ch}
+.sw.g0{background:var(--gold)}.sw.g1{background:var(--fg)}.sw.g2{background:var(--wine)}.sw.g3{background:var(--accent)}
+.jcard{position:relative}
+.gt.jn{--dw:30px;--c1:240px;--L:var(--c1)}
+.jn .r{grid-template-columns:var(--c1) calc(var(--n)*var(--dw))}
+.jn .wk{width:calc(var(--dw)*4)}
+.jn .wk.nx{background:var(--surface2)}
+.jn .hrow.n .d{font-size:10px;color:var(--muted)}
+.jn .hrow.n .d.q0{color:var(--fg);font-weight:600;border-left-color:color-mix(in srgb,var(--fg) 28%,transparent)}
+.jn .c1{border-right:1px solid var(--line)}
+.jtl{position:relative;border-bottom:1px solid var(--line);
+  background-image:repeating-linear-gradient(90deg,transparent 0 calc(var(--dw)*4 - 1px),color-mix(in srgb,var(--fg) 20%,transparent) calc(var(--dw)*4 - 1px) calc(var(--dw)*4)),repeating-linear-gradient(90deg,transparent 0 calc(var(--dw) - 1px),color-mix(in srgb,var(--fg) 7%,transparent) calc(var(--dw) - 1px) var(--dw))}
+.jb{position:absolute;height:24px;border-radius:6px;z-index:2;overflow:hidden;display:flex;align-items:center;padding:0 8px;font-size:12px;font-weight:500;cursor:default}
+.jb span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;pointer-events:none}
+.jb s{position:absolute;top:0;bottom:0;width:8px;cursor:ew-resize;text-decoration:none;z-index:3}
+.jb s.hl{left:0}.jb s.hr{right:0}
+.jb.ed s:hover{background:color-mix(in srgb,#fff 35%,transparent)}
+.jb.g0{background:var(--gold);color:#080808}
+.jb.g1{background:var(--fg);color:var(--bg)}
+.jb.g2{background:var(--wine);color:#f5f0e8}
+.jb.g3{background:var(--accent);color:var(--accent-fg)}
+.jm{position:absolute;width:14px;height:14px;transform:rotate(45deg);border-radius:2px;margin-left:-7px;z-index:2;box-shadow:0 0 0 2px var(--surface)}
+.jm.g0{background:var(--gold)}.jm.g1{background:var(--fg)}.jm.g2{background:var(--wine)}.jm.g3{background:var(--accent)}
+.jmt{position:absolute;height:24px;display:flex;align-items:center;font-size:12px;font-weight:500;white-space:nowrap;pointer-events:none;z-index:2;color:var(--fg)}
+.jb.ed,.jm.ed{cursor:grab}
+.jb.ed:active,.jm.ed:active{cursor:grabbing}
+.jb.sel,.jm.sel{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--fg)}
+@media(max-width:700px){
+  .gt.jn{--c1:116px}
+  .jn .c1{padding:0 8px}
+}
+</style>
+<div class="wrap" id="app"></div>
+<script id="gm-main">/*GM_DATA*/
+var META={"versao":36,"atualizado":"29/10/2026 20:14"};
+var TAREFAS=[{"id":"t01","ordem":1,"fase":"Desenvolvimento do produto","tarefa":"Onboarding da Mata São Paulo e formação do GT","responsavel":"GT","inicio":"2026-10-13","fim":"2026-10-16","status":"concluído","avanco":100,"tipo":"tarefa","nota":"Grupo de trabalho com duas frentes: desenvolvimento (RDN) e espaço (Mata São Paulo).","evento":false},{"id":"t02","ordem":2,"fase":"Desenvolvimento do produto","tarefa":"Reuniões de Desenvolvimento (GT)","responsavel":"GT","inicio":"2026-10-16","fim":"2026-10-16","status":"concluído","avanco":100,"tipo":"tarefa","nota":"Data no Asana: 1 out (anterior ao início do projeto); a confirmar.","evento":false},{"id":"t03","ordem":3,"fase":"Desenvolvimento do produto","tarefa":"Retroplanejamento e painel de acompanhamento","responsavel":"Henrique","inicio":"2026-10-19","fim":"2026-10-21","status":"concluído","avanco":100,"tipo":"tarefa","nota":"Painel espelha o Asana; datas a validar com o GT.","evento":false},{"id":"t36","ordem":36,"fase":"Desenvolvimento do produto","tarefa":"Indicação dos representantes da Mata no grupo conceitual","responsavel":"Mata SP","inicio":"2026-10-22","fim":"2026-10-23","status":"concluído","avanco":100,"tipo":"tarefa","nota":"Antes do primeiro fórum (23/10). Pela RDN, Luiza e Antoine (pesquisa visual, narrativa e jornada do convidado).","evento":false},{"id":"t04","ordem":4,"fase":"Desenvolvimento do produto","tarefa":"Escopo do evento e jornada do convidado","responsavel":"GT","inicio":"2026-10-23","fim":"2026-10-30","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Da chegada ao encerramento; chegada tratada como parte do espetáculo. Desenho conjunto com a Mata em 28/10 a 12/11.","evento":false},{"id":"t40","ordem":40,"fase":"Desenvolvimento do produto","tarefa":"Fórum semanal do grupo conceitual","responsavel":"GT","inicio":"2026-10-23","fim":"2026-11-12","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Rotina semanal a partir do primeiro fórum: referências, narrativa e território; depois, fórum criativo e operacional.","evento":false},{"id":"t37","ordem":37,"fase":"Desenvolvimento do produto","tarefa":"Primeiro fórum do grupo conceitual: validação do núcleo conceitual","responsavel":"GT","inicio":"2026-10-27","fim":"2026-10-27","status":"concluído","avanco":100,"tipo":"marco","nota":"Reunião convocada pela Mata (Pedro Oliveira da Silva) para 23/10, 13h30 às 14h, no Teams, usada como primeiro fórum. Pauta: validar o núcleo conceitual, definir o método de pesquisa visual e combinar a rotina semanal.","evento":false},{"id":"t39","ordem":39,"fase":"Desenvolvimento do produto","tarefa":"Pesquisa visual e narrativa integrada, com referências brasileiras e internacionais","responsavel":"Henrique","inicio":"2026-10-27","fim":"2026-11-06","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Luiza e Antoine (RDN) com os representantes da Mata. Alimenta o Creative System e o deck.","evento":false},{"id":"t45","ordem":45,"fase":"Desenvolvimento do produto","tarefa":"Governança, instâncias de aprovação e direitos de propriedade intelectual","responsavel":"GT","inicio":"2026-10-28","fim":"2026-11-05","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Titularidade da marca, dos conteúdos e dos ativos a definir formalmente entre os parceiros, em coerência com a estrutura societária.","evento":false},{"id":"t44","ordem":44,"fase":"Desenvolvimento do produto","tarefa":"Pontos em aberto: escala e capacidade, perfil e política de convidados, direção artística executiva","responsavel":"GT","inicio":"2026-10-28","fim":"2026-11-05","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Listados como em aberto no documento v4. Modelo comercial segue no plano comercial; line-up segue na pré-produção.","evento":false},{"id":"t05","ordem":5,"fase":"Desenvolvimento do produto","tarefa":"Deck Institucional_Novo Conceito","responsavel":"Henrique","inicio":"2026-10-28","fim":"2026-11-06","status":"em andamento","avanco":35,"tipo":"tarefa","nota":"Reconstrução a pedido do CEO para refletir a maturidade atual do ativo. Entrega em 12/11: o desdobramento visual e o deck seguem a aprovação do território criativo (6/11).","evento":false},{"id":"t07","ordem":7,"fase":"Desenvolvimento do produto","tarefa":"Plano comercial: categorias, cotas e exclusividades","responsavel":"Henrique","inicio":"2026-11-02","fim":"2026-11-06","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Definir cedo as categorias exclusivas (espumante, destilado, automotivo, relógio, hotel).","evento":false},{"id":"t08","ordem":8,"fase":"Desenvolvimento do produto","tarefa":"Orçamento macro e viabilidade","responsavel":"GT","inicio":"2026-11-02","fim":"2026-11-06","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"","evento":false},{"id":"t43","ordem":43,"fase":"Desenvolvimento do produto","tarefa":"Jornada do convidado, programação musical e intervenções artísticas (desenho conjunto)","responsavel":"GT","inicio":"2026-10-28","fim":"2026-11-12","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Depende do primeiro fórum. Desdobra 'Escopo do evento e jornada do convidado' com a Mata.","evento":false},{"id":"t38","ordem":38,"fase":"Desenvolvimento do produto","tarefa":"Confirmação operacional do dia 3/2/2027 com a Mata","responsavel":"Mata SP","inicio":"2026-10-29","fim":"2026-10-30","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Evento definido para 3/2/2027 (quarta). Resta a confirmação operacional da Mata, até 30/10.","evento":false},{"id":"t09","ordem":9,"fase":"Desenvolvimento do produto","tarefa":"Aprovação do cronograma, escopo, orçamento e plano comercial","responsavel":"RDN","inicio":"2026-11-06","fim":"2026-11-06","status":"não iniciado","avanco":0,"tipo":"marco","nota":"Libera prospecção ativa e contratações.","evento":false},{"id":"t41","ordem":41,"fase":"Desenvolvimento do produto","tarefa":"Território criativo aprovado (RDN + Mata)","responsavel":"GT","inicio":"2026-11-06","fim":"2026-11-06","status":"não iniciado","avanco":0,"tipo":"marco","nota":"Prazo do documento v4. Destrava o desdobramento visual, o deck e a reavaliação do nome.","evento":false},{"id":"t10","ordem":10,"fase":"Desenvolvimento do produto","tarefa":"Definição de novo nome","responsavel":"Henrique","inicio":"2026-11-03","fim":"2026-11-06","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Só depois da aprovação do território criativo (6/11), sem decisão antecipada. Inclui reavaliação do nome Grand Masqué e alternativas.","evento":false},{"id":"t11","ordem":11,"fase":"Comercial","tarefa":"Precificação do ativo","responsavel":"RDN","inicio":"2026-11-03","fim":"2026-11-06","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"","evento":false},{"id":"t12","ordem":12,"fase":"Comercial","tarefa":"Lista de prospecção + Cotas e contrapartidas","responsavel":"RDN","inicio":"2026-11-04","fim":"2026-11-09","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"","evento":false},{"id":"t14","ordem":14,"fase":"Comercial","tarefa":"Prospecção e reuniões com marcas","responsavel":"RDN","inicio":"2026-11-09","fim":"2026-12-11","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Abordagem por comunidade que a marca ainda não alcança.","evento":false},{"id":"t16","ordem":16,"fase":"Comercial","tarefa":"Patrocinadores âncoras confirmados","responsavel":"RDN","inicio":"2026-11-27","fim":"2026-11-27","status":"não iniciado","avanco":0,"tipo":"marco","nota":"Porteira do projeto: sem os patrocinadores confirmados, o desenvolvimento do ativo não segue. Hipótese de trabalho: contratos de pré-produção, comunicação e convites só avançam depois deste marco.","evento":false},{"id":"t15","ordem":15,"fase":"Comercial","tarefa":"Abertura de venda convites","responsavel":"RDN","inicio":"2026-12-01","fim":"2027-01-29","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"","evento":false},{"id":"t17","ordem":17,"fase":"Comunicação","tarefa":"Plano de comunicação e imprensa","responsavel":"RDN","inicio":"2026-11-09","fim":"2026-11-27","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Hipótese: plano pronto na semana seguinte à porteira (Asana: 11/1 a 22/1).","evento":false},{"id":"t19","ordem":19,"fase":"Comunicação","tarefa":"Imprensa, fotógrafos e produção de conteúdo","responsavel":"RDN","inicio":"2027-01-04","fim":"2027-02-04","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"","evento":false},{"id":"t20","ordem":20,"fase":"Pré-produção","tarefa":"Plano de uso do espaço com a Mata São Paulo","responsavel":"Mata SP","inicio":"2026-11-03","fim":"2026-12-04","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Capacidade, ambientes, acessos e chegada. Início em 3/11 (frente de pré-produção abre em 2/11, feriado), sem compromissos de contratação antes da porteira.","evento":false},{"id":"t21","ordem":21,"fase":"Pré-produção","tarefa":"Curadoria: tema, dress code e ateliê da máscara","responsavel":"RDN","inicio":"2026-11-23","fim":"2026-12-11","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Hipótese: fechar tema e dress code antes do recesso, para alimentar convites e comunicação (Asana: 16/11 a 18/12).","evento":false},{"id":"t23","ordem":23,"fase":"Pré-produção","tarefa":"Orçamento detalhado e cotações","responsavel":"GT","inicio":"2026-11-30","fim":"2026-12-18","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Hipótese: primeira semana após a porteira, já com o valor dos patrocínios fechado (Asana: 30/11 a 11/12).","evento":false},{"id":"t22","ordem":22,"fase":"Pré-produção","tarefa":"Line-up e atrações","responsavel":"RDN","inicio":"2026-12-07","fim":"2026-12-18","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Hipótese: nenhuma atração é contratada antes da confirmação dos patrocinadores (27/11) (Asana: 23/11 a 18/12).","evento":false},{"id":"t24","ordem":24,"fase":"Pré-produção","tarefa":"Cenografia e projeto de montagem","responsavel":"GT","inicio":"2026-11-30","fim":"2027-01-08","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Hipótese: projeto começa logo após a porteira (Asana: 1/12 a 8/1).","evento":false},{"id":"t28","ordem":28,"fase":"Pré-produção","tarefa":"Licenças, segurança e plano de operação","responsavel":"GT","inicio":"2026-11-30","fim":"2027-01-22","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Hipótese: pedidos de licença e plano de segurança começam após a porteira; frente de pré-produção vai até 22/1, como no documento de alinhamento.","evento":false},{"id":"t25","ordem":25,"fase":"Pré-produção","tarefa":"Contratação de fornecedores-chave","responsavel":"GT","inicio":"2026-12-07","fim":"2026-12-18","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"Hipótese: contratos assinados antes do recesso de fim de ano (Asana: 7/12 a 23/12).","evento":false},{"id":"t26","ordem":26,"fase":"Pré-produção","tarefa":"Gastronomia e hospitalidade","responsavel":"Mata SP","inicio":"2026-12-07","fim":"2027-01-08","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"","evento":false},{"id":"t29","ordem":29,"fase":"Pré-produção","tarefa":"Convites enviados","responsavel":"RDN","inicio":"2027-01-04","fim":"2027-01-04","status":"não iniciado","avanco":0,"tipo":"marco","nota":"Prazo do documento de alinhamento e do Asana (4/1). A lista de convidados fica pronta antes do recesso (18/12).","evento":false},{"id":"t31","ordem":31,"fase":"Montagem e execução","tarefa":"Montagem","responsavel":"GT","inicio":"2027-01-22","fim":"2027-02-03","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"","evento":false},{"id":"t32","ordem":32,"fase":"Montagem e execução","tarefa":"Ensaios técnicos e ensaio geral","responsavel":"GT","inicio":"2027-01-29","fim":"2027-02-03","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"","evento":false},{"id":"t33","ordem":33,"fase":"Montagem e execução","tarefa":"São Paulo Grand Masqué","responsavel":"GT","inicio":"2027-02-03","fim":"2027-02-03","status":"não iniciado","avanco":0,"tipo":"marco","nota":"Dia do evento (quarta-feira, pré-Carnaval).","evento":true},{"id":"t34","ordem":34,"fase":"Pós-evento","tarefa":"Desmontagem e devolução do espaço","responsavel":"GT","inicio":"2027-02-05","fim":"2027-02-06","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"","evento":false},{"id":"t35","ordem":35,"fase":"Pós-evento","tarefa":"Relatório e entregas aos patrocinadores","responsavel":"RDN","inicio":"2027-02-08","fim":"2027-02-12","status":"não iniciado","avanco":0,"tipo":"tarefa","nota":"","evento":false}];
+var DATAS=[{"data":"2026-11-02","rotulo":"Finados","tipo":"feriado"},{"data":"2026-11-15","rotulo":"Proclamação da República","tipo":"feriado"},{"data":"2026-11-20","rotulo":"Consciência Negra","tipo":"feriado"},{"data":"2026-12-24","rotulo":"Véspera de Natal","tipo":"recesso"},{"data":"2026-12-25","rotulo":"Natal","tipo":"feriado"},{"data":"2026-12-31","rotulo":"Réveillon","tipo":"recesso"},{"data":"2027-01-01","rotulo":"Confraternização Universal","tipo":"feriado"},{"data":"2027-01-30","rotulo":"Pré-Carnaval de rua SP","tipo":"carnaval"},{"data":"2027-01-31","rotulo":"Pré-Carnaval de rua SP","tipo":"carnaval"},{"data":"2027-02-05","rotulo":"Desfiles do Grupo Especial SP","tipo":"carnaval"},{"data":"2027-02-06","rotulo":"Desfiles e Carnaval de rua SP","tipo":"carnaval"},{"data":"2027-02-07","rotulo":"Carnaval de rua SP","tipo":"carnaval"},{"data":"2027-02-08","rotulo":"Carnaval de rua SP","tipo":"carnaval"},{"data":"2027-02-09","rotulo":"Carnaval de rua SP","tipo":"carnaval"},{"data":"2027-02-13","rotulo":"Pós-Carnaval de rua SP","tipo":"carnaval"},{"data":"2027-02-14","rotulo":"Pós-Carnaval de rua SP","tipo":"carnaval"}];
+var JORNADA={"grupos":[{"nome":"Acessos e fluxo","curto":"Acessos","sub":"chegada, valet e saída"},{"nome":"Cluster 1 · Jantar","curto":"Cluster 1","sub":"~500 pessoas"},{"nome":"Cluster 2 · Praça e restaurantes","curto":"Cluster 2","sub":"~200 pessoas, em pé"},{"nome":"Cluster 3 · Festa noturna","curto":"Cluster 3","sub":"meta de ~4.000 pessoas circulando"}],"espacos":[{"id":"e1","nome":"Drop-off e recepção","g":0},{"id":"e2","nome":"Saída, valet e Uber","g":0},{"id":"e3","nome":"Mata Città (salão principal)","g":1},{"id":"e4","nome":"Dolce Vita","g":1},{"id":"e5","nome":"Mata Lab","g":2},{"id":"e6","nome":"Praça","g":2},{"id":"e7","nome":"Preta Maria","g":2},{"id":"e8","nome":"Bachour","g":2},{"id":"e9","nome":"Téra","g":3},{"id":"e10","nome":"Espaços 1 a 4","g":3},{"id":"e11","nome":"Sala Acima","g":3},{"id":"e12","nome":"Sala de eventos","g":3}],"itens":[{"id":"j1","espaco":"e1","acao":"Abertura das portas","ini":"19:00","fim":"19:00","tipo":"marco","nota":"Chegada do Cluster 1 estimada entre 19h e 20h (reunião de 23/10)."},{"id":"j2","espaco":"e1","acao":"Chegada Cluster 2","ini":"20:00","fim":"21:30","tipo":"tarefa","nota":"Triagem com front desk, QR code e concierge. Hipótese: Clusters 2 e 3 entram pelo drop-off ou pela Casa Bradesco. A recepção centralizada no drop-off é sugestão da Mata, ainda não confirmada."},{"id":"j3","espaco":"e1","acao":"Chegada Cluster 3","ini":"22:00","fim":"23:30","tipo":"tarefa","nota":"Início da noite estimado entre 22h e 23h, ainda não definido."},{"id":"j4","espaco":"e2","acao":"Saída gradual, valet e Uber","ini":"01:00","fim":"03:30","tipo":"tarefa","nota":"Público animado aceita caminhar mais. Possível ponto adicional de Uber na saída do Mata Città ou na Itapeva. Quatro pontos de valet e quatro de Uber abertos ao mesmo tempo não é viável. Depende da reunião operacional com a Property."},{"id":"j5","espaco":"e3","acao":"Jantar","ini":"19:30","fim":"21:30","tipo":"tarefa","nota":"Cerca de 500 pessoas; salão com 450 assentos, Dolce Vita amplia a capacidade. Formato de serviço, custo e logística seguem com o time de Foods."},{"id":"j6","espaco":"e3","acao":"Atração musical","ini":"20:30","fim":"22:00","tipo":"tarefa","nota":"Atração prevista dentro do Mata Città; artista a definir."},{"id":"j7","espaco":"e3","acao":"Deslocamento para a noite","ini":"22:00","fim":"22:00","tipo":"marco","nota":"Clusters 1 e 2 se deslocam progressivamente para a festa."},{"id":"j8","espaco":"e4","acao":"Boas-vindas","ini":"19:00","fim":"20:00","tipo":"tarefa","nota":"Varanda do Mata Città ou escadaria do Dolce Vita como boas-vindas ao Cluster 1."},{"id":"j9","espaco":"e4","acao":"Pós-jantar","ini":"22:00","fim":"23:00","tipo":"tarefa","nota":""},{"id":"j10","espaco":"e5","acao":"Welcome Cluster 2","ini":"20:00","fim":"21:30","tipo":"tarefa","nota":"Montação, beauty e ativações de marcas. Sugestão de usar o salão principal. Exige entender o que precisa ser removido ou reorganizado (área dos cogumelos). A rota privativa do Cluster 1 pode passar pelo Mata Lab até o Dolce Vita."},{"id":"j11","espaco":"e6","acao":"Bandas e hand foods","ini":"21:00","fim":"23:00","tipo":"tarefa","nota":"Formato em pé, sem mesa sentada. Música externa gera reclamação da vizinhança; capacidade da praça ainda não levantada."},{"id":"j12","espaco":"e7","acao":"Hang foods","ini":"20:30","fim":"23:00","tipo":"tarefa","nota":"Cada restaurante comporta cerca de 65 pessoas; a praça amplia o espaço."},{"id":"j13","espaco":"e7","acao":"Atração musical","ini":"22:00","fim":"23:00","tipo":"tarefa","nota":"Perfil de referência: Seu Jorge. Artista não confirmado."},{"id":"j14","espaco":"e8","acao":"Hang foods","ini":"20:30","fim":"23:00","tipo":"tarefa","nota":"Cada restaurante comporta cerca de 65 pessoas; a praça amplia o espaço."},{"id":"j15","espaco":"e9","acao":"Início da festa","ini":"22:30","fim":"22:30","tipo":"marco","nota":"Início estimado entre 22h e 23h, ainda não definido."},{"id":"j16","espaco":"e9","acao":"Programação principal","ini":"22:30","fim":"03:00","tipo":"tarefa","nota":"Sala principal, embaixo. Um camarote no Téra, por exemplo, muda o número de pessoas."},{"id":"j17","espaco":"e10","acao":"Programação dos Espaços 1 a 4","ini":"23:00","fim":"03:00","tipo":"tarefa","nota":"Atrações de outros espaços podem reaparecer na festa. Capacidades ainda não levantadas."},{"id":"j18","espaco":"e11","acao":"Programação a definir","ini":"23:30","fim":"03:00","tipo":"tarefa","nota":"Dois lances de escada acima do Espaço 3."},{"id":"j19","espaco":"e12","acao":"Programação a definir","ini":"23:30","fim":"03:00","tipo":"tarefa","nota":"Acima, à direita da escada. Estava em obra na última visita, com expectativa de estar pronta."}]};
+var STANDALONE_FLAG=1;
+/*GM_END*/
+var EVENTO="2027-02-03";
+var LINK_MATA="https://claude.ai/artifact/T7ThqYY6qGDsocVUeKaoLo";
+var LINK_VIEW="https://claude.ai/artifact/WSWGxwYJo3TpACH6xnuGkZ#visualizar";
+var HEADTAGS='<title>Painel São Paulo Grand Masqué</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap">\n';
+var SK_HEAD='<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>';
+var C="concluído",A="em andamento",N="não iniciado";
+var DAY=864e5, DW=26;
+var MES=["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+var DOW=["D","S","T","Q","Q","S","S"];
+function u(s){return Date.UTC(+s.slice(0,4),+s.slice(5,7)-1,+s.slice(8,10))}
+function iso(ms){return new Date(ms).toISOString().slice(0,10)}
+function fd(ms){var d=new Date(ms);return d.getUTCDate()+" "+MES[d.getUTCMonth()]}
+function fdy(ms){var d=new Date(ms);return d.getUTCDate()+" "+MES[d.getUTCMonth()]+" "+d.getUTCFullYear()}
+function periodo(a,b){if(a===b)return fd(a);var x=new Date(a),y=new Date(b);return x.getUTCMonth()===y.getUTCMonth()?x.getUTCDate()+"–"+fd(b):fd(a)+" – "+fd(b)}
+function esc(s){return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+var tt=new Date(), HOJE=Date.UTC(tt.getFullYear(),tt.getMonth(),tt.getDate()), EV=u(EVENTO);
+var SITNOME={done:"Concluído",doing:"Em andamento",late:"Atrasado",todo:"Não iniciado"};
+var ROWS=[],FASES=[],GSTART=0;
+var STANDALONE=(typeof STANDALONE_FLAG!=="undefined");
+var estado={aba:"retro",fase:"todas",sl:0,st:0,sel:null,confirmDel:false,jsel:null,jconf:false,jg:"todos",rs:0,esel:null,econf:false,jult:null};
+var ABAS=[["retro","Retroplanejamento"],["jornada","Jornada do Público"],["escopo","Escopo"],["comercial","Comercial"]];
+normaliza();normalizaJ();
+var podeEditar=false, modoVer=true, dirty=0, ORIG=JSON.stringify(TAREFAS), popOpen=false, msg="", salvando=false, API=null;
+var ABERTO_VIEW=(location.hash==="#visualizar");
+var ORIGJ=JSON.stringify(JORNADA);
+
+function calc(){
+  ROWS=TAREFAS.map(function(r){
+    var ini=u(r.inicio),fim=u(r.fim),sit;
+    if(r.status===C)sit="done";
+    else if(fim<HOJE)sit="late";
+    else if(r.status===A)sit="doing";
+    else if(ini<HOJE)sit="late";
+    else sit="todo";
+    var dd=Math.round((EV-fim)/DAY);
+    return Object.assign({},r,{ini:ini,fim:fim,sit:sit,dl:dd===0?"D":dd>0?"D-"+dd:"D+"+(-dd),per:periodo(ini,fim)});
+  });
+  FASES=[];TAREFAS.forEach(function(r){if(FASES.indexOf(r.fase)<0)FASES.push(r.fase)});
+}
+function normaliza(){
+  var ordem=[];TAREFAS.forEach(function(r){if(ordem.indexOf(r.fase)<0)ordem.push(r.fase)});
+  var idx=TAREFAS.map(function(r,i){return {r:r,i:i}});
+  idx.sort(function(a,b){return ordem.indexOf(a.r.fase)-ordem.indexOf(b.r.fase)||a.i-b.i});
+  TAREFAS=idx.map(function(x){return x.r});
+}
+function byId(id){return TAREFAS.find(function(t){return t.id===id})}
+function editando(){return podeEditar&&!modoVer}
+
+function kpis(){
+  var tarefas=ROWS.filter(function(r){return r.tipo!=="marco"});
+  var avg=tarefas.length?Math.round(tarefas.reduce(function(t,r){return t+(r.sit==="done"?100:+r.avanco||0)},0)/tarefas.length):0;
+  var conc=tarefas.filter(function(r){return r.sit==="done"}).length;
+  var and=tarefas.filter(function(r){return r.sit==="doing"}).length;
+  var atr=tarefas.filter(function(r){return r.sit==="late"}).length;
+  var prox=ROWS.filter(function(r){return r.tipo==="marco"&&r.sit!=="done"&&r.fim>=HOJE}).sort(function(a,b){return a.fim-b.fim})[0];
+  var h='<div class="kpis">';
+  h+='<div class="kpi"><span>Avanço geral</span><b>'+avg+'%</b><i>'+conc+' de '+tarefas.length+' entregas concluídas</i></div>';
+  h+='<div class="kpi"><span>Em andamento</span><b>'+and+'</b><i>entregas com trabalho aberto</i></div>';
+  h+='<div class="kpi"><span>Atrasadas</span><b'+(atr?' class="bad"':'')+'>'+atr+'</b><i>'+(atr?'barras em vermelho no cronograma':'nenhuma entrega fora do prazo')+'</i></div>';
+  if(prox)h+='<div class="kpi"><span>Próximo marco</span><b style="font-size:20px;line-height:1.25;margin-top:8px">'+esc(prox.tarefa)+'</b><i>'+fd(prox.fim)+' · '+prox.dl+' · '+esc(prox.responsavel)+'</i></div>';
+  return h+'</div>';
+}
+
+function gantt(){
+  var ed=editando();
+  var rows=ROWS.filter(function(r){return estado.fase==="todas"||r.fase===estado.fase});
+  var minI=Math.min.apply(null,ROWS.map(function(r){return r.ini})),maxF=Math.max.apply(null,ROWS.map(function(r){return r.fim}));
+  minI=Math.min(minI,HOJE);
+  var ds=new Date(minI).getUTCDay(), START=minI-((ds+6)%7)*DAY;
+  var de=new Date(maxF).getUTCDay(), END=maxF+((7-de)%7)*DAY+7*DAY*(ed?1:0);
+  GSTART=START;
+  var n=Math.round((END-START)/DAY)+1, nw=n/7;
+  var mapa={};DATAS.forEach(function(d){mapa[u(d.data)]=d});
+  var hojeI=Math.round((HOJE-START)/DAY), evI=Math.round((EV-START)/DAY);
+  var h='<div class="gt" style="--n:'+n+'">';
+  h+='<div class="head">';
+  var w='',l='',nn='';
+  for(var i=0;i<nw;i++){
+    var a=START+i*7*DAY,b=a+6*DAY,ev=(EV>=a&&EV<=b);
+    var lab=(new Date(a).getUTCMonth()===new Date(b).getUTCMonth()?new Date(a).getUTCDate()+"–"+fd(b):fd(a)+" – "+fd(b));
+    w+='<div class="wk'+(ev?' evw':'')+'">'+lab+(ev?' · evento':'')+'</div>';
+  }
+  for(var k=0;k<n;k++){
+    var ms=START+k*DAY,dt=new Date(ms),wd=dt.getUTCDay(),inf=mapa[ms];
+    var cls="d"+((wd===0||wd===6)?" we":"")+(inf&&inf.tipo!=="carnaval"?" hol":"")+(inf&&inf.tipo==="carnaval"?" car":"")+(ms===EV?" evt":"");
+    var tip=(inf?' data-tip="'+esc(inf.rotulo)+'" data-sub="'+fdy(ms)+'"':ms===EV?' data-tip="São Paulo Grand Masqué" data-sub="'+fdy(ms)+'"':'');
+    l+='<div class="'+cls+'"'+tip+'>'+DOW[wd]+'</div>';
+    nn+='<div class="'+cls+(k===hojeI?" hj":"")+'"'+tip+'><span>'+dt.getUTCDate()+'</span></div>';
+  }
+  h+='<div class="r"><div class="c c1" style="height:26px">Semana</div><div class="c c2"></div><div class="c c3"></div><div class="hrow w">'+w+'</div></div>';
+  h+='<div class="r"><div class="c c1" style="height:20px"></div><div class="c c2"></div><div class="c c3"></div><div class="hrow l">'+l+'</div></div>';
+  h+='<div class="r"><div class="c c1" style="height:24px">Entrega</div><div class="c c2">Resp.</div><div class="c c3">Prazo</div><div class="hrow n">'+nn+'</div></div>';
+  h+='</div>';
+  var ov='';
+  for(var q=0;q<n;q++){var m2=START+q*DAY,i2=mapa[m2];if(i2)ov+='<i class="'+(i2.tipo==="carnaval"?"car":"hol")+'" style="left:'+q*DW+'px"></i>'}
+  ov+='<i class="evt" style="left:'+evI*DW+'px"></i>';
+  h+='<div class="ov a">'+ov+'</div>';
+  var ln='';
+  if(hojeI>=0&&hojeI<n)ln+='<u style="left:'+(hojeI*DW+DW/2-1)+'px"></u>';
+  ln+='<u class="ev" style="left:'+(evI*DW+DW/2-1)+'px"></u>';
+  h+='<div class="ov b">'+ln+'</div>';
+  var ult="";
+  rows.forEach(function(r){
+    if(r.fase!==ult){ult=r.fase;var cnt=rows.filter(function(x){return x.fase===ult}).length;h+='<div class="r"><div class="band"><span>'+esc(ult)+' <em>'+cnt+' itens</em></span></div></div>'}
+    var left=Math.round((r.ini-START)/DAY)*DW, len=(Math.round((r.fim-r.ini)/DAY)+1)*DW;
+    var sel=(estado.sel===r.id)?" sel":"";
+    var tipattr=' tabindex="0" data-id="'+r.id+'"';
+    var el;
+    if(r.tipo==="marco"){
+      var cx=left+DW/2;
+      el='<div class="ms '+(r.evento?"ev ":"")+r.sit+(ed?" ed":"")+sel+'" style="left:'+cx+'px"'+tipattr+'></div><div class="mt" style="left:'+(cx+18)+'px">'+fd(r.fim)+'</div>';
+    }else{
+      var pct=r.sit==="done"?100:(+r.avanco||0);
+      el='<div class="bar '+r.sit+(ed?" ed":"")+sel+'" style="left:'+(left+2)+'px;width:'+(len-4)+'px"'+tipattr+'><i style="width:'+pct+'%"></i>'+(ed?'<s class="hl"></s><s class="hr"></s>':'')+'</div>';
+    }
+    h+='<div class="r row"><div class="c c1'+(ed?' ed':'')+'" '+(ed?'data-open="'+r.id+'"':'')+'><span class="nm'+(r.tipo==="marco"?" m":"")+'">'+(r.tipo==="marco"?'<span class="dm'+(r.evento?" ev":"")+'"></span>':"")+esc(r.tarefa)+'</span></div><div class="c c2">'+esc(r.responsavel)+'</div><div class="c c3">'+r.per+'</div><div class="tl">'+el+'</div></div>';
+  });
+  h+='</div>';
+  return h;
+}
+
+function panel(){
+  var t=byId(estado.sel);if(!t||!editando())return '';
+  var fases=FASES.map(function(f){return '<option value="'+esc(f)+'">'}).join('');
+  var sts=[C,A,N].map(function(s){return '<option value="'+s+'"'+(t.status===s?' selected':'')+'>'+s+'</option>'}).join('');
+  var pessoas=['RDN','GT','Mata SP','Henrique','Design','CEO'].map(function(f){return '<option value="'+f+'">'}).join('');
+  var marco=t.tipo==="marco";
+  var h='<div class="panel" id="panel"><h3>Editar entrega</h3><div class="fg">';
+  h+='<label class="w2">Entrega<input id="f-tarefa" value="'+esc(t.tarefa)+'"></label>';
+  h+='<label>Fase<input id="f-fase" list="dl-fase" value="'+esc(t.fase)+'"><datalist id="dl-fase">'+fases+'</datalist></label>';
+  h+='<label>Responsável<input id="f-resp" list="dl-resp" value="'+esc(t.responsavel)+'"><datalist id="dl-resp">'+pessoas+'</datalist></label>';
+  h+='<label>Tipo<select id="f-tipo"><option value="tarefa"'+(!marco?' selected':'')+'>Entrega com período</option><option value="marco"'+(marco?' selected':'')+'>Marco (um dia)</option></select></label>';
+  h+='<label>Início<input id="f-ini" type="date" min="2020-01-01" max="2099-12-31" value="'+t.inicio+'"></label>';
+  h+='<label>Fim<input id="f-fim" type="date" min="2020-01-01" max="2099-12-31" value="'+t.fim+'"></label>';
+  h+='<label>Situação<select id="f-st">'+sts+'</select></label>';
+  h+='<label>Avanço (%)<input id="f-av" type="number" min="0" max="100" step="5" value="'+(+t.avanco||0)+'"></label>';
+  h+='<label class="w2">Nota<textarea id="f-nota">'+esc(t.nota)+'</textarea></label>';
+  h+='</div><div class="acts"><button class="btn" data-act="aplicar">Aplicar</button><button class="btn sec" data-act="fechar">Fechar</button><button class="btn sec" data-act="sobe">↑ Subir</button><button class="btn sec" data-act="desce">↓ Descer</button><span class="sp"></span>';
+  h+=estado.confirmDel?'<button class="btn bad" data-act="excluir2">Confirmar exclusão</button><button class="btn sec" data-act="cancela">Cancelar</button>':'<button class="btn sec" data-act="excluir">Excluir entrega</button>';
+  return h+'</div></div>';
+}
+
+function topo(){
+  var h='<header><div><p class="eyebrow">São Paulo Grand Masqué</p><h1>Painel de atualização</h1><p class="sub">'+(estado.aba==="jornada"?"Jornada do público ao longo da noite, espaço a espaço, em intervalos de 15 minutos.":"Retroplanejamento a partir do evento, em 3 de fevereiro de 2027, semana a semana e dia a dia.")+'</p></div>';
+  if(editando())h+='<div class="stamp"><a class="mata" href="'+LINK_MATA+'" target="_blank" rel="noopener">Cronograma para a Mata ↗</a></div>';
+  h+='</header>';
+  return h;
+}
+function eyeSvg(off){return off?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.2A9.8 9.8 0 0 1 12 6c5 0 8.6 4 10 6-.6.9-1.7 2.3-3.3 3.5M6.5 7.8C4.5 9.2 3 11 2 12c1.4 2 5 6 10 6 1.5 0 2.8-.3 4-.9"/><path d="M9.9 10a3 3 0 0 0 4.1 4.1"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>'}
+function acoesTopo(){
+  if(!podeEditar)return '';
+  var h='<div class="hact"><button class="eye" id="eye" aria-pressed="'+modoVer+'" aria-expanded="'+popOpen+'" data-act="olho">'+eyeSvg(modoVer)+(modoVer?'Visualização':'Visualizar')+'</button>';
+  if(popOpen){
+    h+='<div class="pop" id="pop"><h3>Link de visualização</h3><p>Quem abrir o link vê o painel sem os controles de edição. A pessoa precisa ter acesso ao artefato: compartilhe pelo menu Compartilhar do Claude.</p><div class="lk"><input id="lk" readonly value="'+LINK_VIEW+'" aria-label="Link de visualização"><button class="btn" data-act="copia">Copiar</button></div><div class="row2"><button class="btn sec" data-act="baixa">Baixar HTML</button><button class="btn sec" data-act="alterna">'+(modoVer?'Voltar a editar':'Ver como visitante')+'</button></div><p style="margin-top:12px">Versão resumida para o time da Mata (somente leitura, artefato separado): <a href="'+LINK_MATA+'" target="_blank" rel="noopener">abrir</a></p><p id="pop-msg" style="margin-top:10px"></p></div>';
+  }
+  return h+'</div>';
+}
+function lista(){
+  var rows=ROWS.filter(function(r){return estado.fase==="todas"||r.fase===estado.fase});
+  var h='<div class="mlist">',ult="";
+  rows.forEach(function(r){
+    if(r.fase!==ult){ult=r.fase;h+='<h4>'+esc(ult)+'</h4>'}
+    var pct=r.sit==="done"?100:(+r.avanco||0);
+    h+='<div class="mc '+r.sit+'"><b>'+(r.tipo==="marco"?'◆ ':'')+esc(r.tarefa)+'</b><span><i class="sw '+r.sit+'"></i>'+SITNOME[r.sit]+' · '+r.per+'</span><span>'+esc(r.responsavel)+' · '+r.dl+'</span>'+(r.tipo==="marco"?'':'<div class="bt"><i style="width:'+pct+'%"></i></div>')+'</div>';
+  });
+  return h+'</div><button class="mtog" onclick="document.getElementById(\'app\').classList.toggle(\'showg\')">Alternar lista / cronograma</button>';
+}
+function renderRetro(){
+  var ed=editando();
+  var h=kpis();
+  h+='<div class="tools"><div class="seg" role="group" aria-label="Filtrar por fase"><button data-fase="todas" aria-pressed="'+(estado.fase==="todas")+'">Todas</button>'+FASES.map(function(f){return '<button data-fase="'+esc(f)+'" aria-pressed="'+(estado.fase===f)+'">'+esc(f)+'</button>'}).join('')+'</div>';
+  h+='<div class="go">'+(ed?'<button data-act="nova">+ Adicionar entrega</button>':'')+'<button data-go="hoje">Ir para hoje</button><button data-go="evento">Ir para o evento</button></div></div>';
+  h+='<div class="legend"><span><i class="sw doing"></i>Em andamento</span><span><i class="sw done"></i>Concluído</span><span><i class="sw todo"></i>Não iniciado</span><span><i class="sw late"></i>Atrasado</span><span><i class="dm"></i>Marco</span><span><i class="dm ev"></i>Evento</span><span><i class="ln"></i>Hoje / evento</span><span><i class="sw hol"></i>Feriado ou recesso</span><span><i class="sw car"></i>Carnaval de rua SP</span></div>';
+  if(ed)h+='<p class="hint"><span class="dot"></span>Modo edição: arraste uma barra para mover, puxe as pontas para mudar início e fim, e clique no nome ou na barra para editar os detalhes.</p>';
+  if(msg)h+='<div class="toast" role="status">'+esc(msg)+'</div>';
+  h+=lista();
+  h+='<div class="cardw" style="margin-top:12px"><div class="gts" id="gts">'+gantt()+'</div><div class="tip" id="tip" hidden></div></div>';
+  h+=panel();
+  h+='<p class="note">Retroplanejamento a partir de 3/2/2027, Asana de 21/10 + cenário hipotético após o marco de 27/11/2026 (GT: RDN + Mata São Paulo). Responsáveis ainda não estão atribuídos no Asana. Na fase de desenvolvimento do produto, as entregas do documento de alinhamento RDN × Mata (v4) foram somadas às anteriores, dentro da janela até 12/11. Cada coluna é um dia; fins de semana ficam sombreados. Datas do Carnaval de rua e dos desfiles de São Paulo vêm da Prefeitura e da Liga-SP (radar de 5 e 17/10); o fim de semana de 30/1 e a semana de 5 a 9/2 concentram a operação da cidade. Situação calculada com a data de hoje.</p>';
+  return h;
+}
+function vazio(t,p){return '<div class="empty"><h2>'+t+'</h2><p>'+p+'</p><p><span class="tag">próxima etapa</span></p></div>'}
+function barraSalvar(){
+  if(!dirty||!editando())return '';
+  return '<div class="savebar" role="region" aria-label="Alterações não salvas"><span class="sp"><b>'+dirty+(dirty===1?' alteração':' alterações')+'</b> não '+(dirty===1?'salva':'salvas')+'</span><button class="btn sec" data-act="descarta"'+(salvando?' disabled':'')+'>Descartar</button><button class="btn" data-act="salva"'+(salvando?' disabled':'')+'>'+(salvando?'Publicando…':'Salvar e publicar')+'</button></div>';
+}
+/* ---- Jornada do Público ---- */
+var JW=30,JS0=0,JE0=0;
+function hm(s){var p=String(s||"0:0").split(":"),m=(parseInt(p[0],10)||0)*60+(parseInt(p[1],10)||0);return m<720?m+1440:m}
+function mh(m){m=((m%1440)+1440)%1440;return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0")}
+function mhh(m){m=((m%1440)+1440)%1440;return Math.floor(m/60)+"h"}
+function durJ(a){if(a<60)return a+" min";var h=Math.floor(a/60),x=a%60;return h+" h"+(x?" "+String(x).padStart(2,"0"):"")}
+function jbyId(id){return JORNADA.itens.find(function(i){return i.id===id})}
+function jesp(id){return JORNADA.espacos.find(function(e){return e.id===id})}
+function novoIdJ(p,arr){var m=0;arr.forEach(function(t){var n=parseInt(String(t.id).replace(/\D/g,""),10);if(n>m)m=n});return p+(m+1)}
+function normalizaJ(){
+  var ord={};JORNADA.espacos.forEach(function(e,i){ord[e.id]=i});
+  var idx=JORNADA.itens.map(function(r,i){return {r:r,i:i}});
+  idx.sort(function(a,b){return (ord[a.r.espaco]-ord[b.r.espaco])||(a.i-b.i)});
+  JORNADA.itens=idx.map(function(x){return x.r});
+}
+function lanes(list){
+  var ends=[],out=[];
+  list.slice().sort(function(x,y){return hm(x.ini)-hm(y.ini)||hm(x.fim)-hm(y.fim)}).forEach(function(it){
+    var a=hm(it.ini),f=hm(it.fim),b=it.tipo==="marco"?a+Math.ceil((28+String(it.acao).length*6.6)/JW)*15:Math.max(f,a+15);
+    var l=0;while(l<ends.length&&ends[l]>a)l++;
+    ends[l]=b;out.push({it:it,l:l,a:a,b:f});
+  });
+  return {items:out,n:Math.max(1,ends.length)};
+}
+function kpisJ(){
+  var its=JORNADA.itens;if(!its.length)return '';
+  var a=Math.min.apply(null,its.map(function(i){return hm(i.ini)})),b=Math.max.apply(null,its.map(function(i){return hm(i.fim)}));
+  var us={};its.forEach(function(i){us[i.espaco]=1});
+  var h='<div class="kpis">';
+  h+='<div class="kpi"><span>Primeira ação</span><b>'+mh(a)+'</b><i>abertura da noite</i></div>';
+  h+='<div class="kpi"><span>Última ação</span><b>'+mh(b)+'</b><i>fim da operação · '+durJ(b-a)+' de jornada</i></div>';
+  h+='<div class="kpi"><span>Espaços</span><b>'+Object.keys(us).length+'</b><i>de '+JORNADA.espacos.length+' mapeados, com ações</i></div>';
+  h+='<div class="kpi"><span>Ações</span><b>'+its.length+'</b><i>barras e marcos na jornada</i></div>';
+  return h+'</div>';
+}
+function ganttJ(){
+  var ed=editando(),its=JORNADA.itens;
+  var mn=Math.min.apply(null,its.map(function(i){return hm(i.ini)}).concat([1200])),mx=Math.max.apply(null,its.map(function(i){return hm(i.fim)}).concat([1260]));
+  var S=Math.floor(mn/60)*60-60,E=Math.ceil(mx/60)*60+(ed?60:0);
+  JS0=S;JE0=E;
+  var n=(E-S)/15,w='',q='';
+  for(var m=S;m<E;m+=60)w+='<div class="wk'+(m>=1440?' nx':'')+'">'+mhh(m)+(m===1440?' · madrugada':'')+'</div>';
+  for(var m2=S;m2<E;m2+=15)q+='<div class="d'+(m2%60===0?' q0':'')+'">'+String(m2%60).padStart(2,"0")+'</div>';
+  var h='<div class="gt jn" style="--n:'+n+'"><div class="head">';
+  h+='<div class="r"><div class="c c1" style="height:26px">Hora</div><div class="hrow w">'+w+'</div></div>';
+  h+='<div class="r"><div class="c c1" style="height:24px">Espaço</div><div class="hrow n">'+q+'</div></div></div>';
+  var ult=-1;
+  JORNADA.espacos.forEach(function(e){
+    if(estado.jg!=="todos"&&String(e.g)!==estado.jg)return;
+    if(e.g!==ult){ult=e.g;var G=JORNADA.grupos[e.g]||{nome:"",sub:""};h+='<div class="r"><div class="band"><span><i class="sw g'+(e.g%4)+'"></i>'+esc(G.nome)+' <em>'+esc(G.sub||"")+'</em></span></div></div>'}
+    var L=lanes(its.filter(function(i){return i.espaco===e.id})),ht=L.n*30+10,el='';
+    L.items.forEach(function(o){
+      var x=(o.a-S)/15*JW,top=5+o.l*30,cls="g"+(e.g%4),sel=(estado.jsel===o.it.id)?" sel":"",at=' tabindex="0" data-jid="'+o.it.id+'"';
+      if(o.it.tipo==="marco"){
+        el+='<div class="jm '+cls+(ed?" ed":"")+sel+'" style="left:'+x+'px;top:'+(top+5)+'px"'+at+'></div><div class="jmt" style="left:'+(x+14)+'px;top:'+top+'px">'+esc(o.it.acao)+'</div>';
+      }else{
+        var wd=Math.max(1,(o.b-o.a)/15)*JW;
+        el+='<div class="jb '+cls+(ed?" ed":"")+sel+'" style="left:'+(x+1)+'px;top:'+top+'px;width:'+(wd-2)+'px"'+at+'><span>'+esc(o.it.acao)+'</span>'+(ed?'<s class="hl"></s><s class="hr"></s>':'')+'</div>';
+      }
+    });
+    h+='<div class="r" style="height:'+ht+'px"><div class="c c1'+(ed?' ed':'')+'"'+(ed?' data-eopen="'+e.id+'"':'')+'><span class="nm">'+esc(e.nome)+'</span></div><div class="jtl" style="height:'+ht+'px">'+el+'</div></div>';
+  });
+  return h+'</div>';
+}
+function panelJ(){
+  var t=jbyId(estado.jsel);if(!t||!editando())return '';
+  var e0=jesp(t.espaco)||{nome:"",g:0},marco=t.tipo==="marco";
+  var dl=JORNADA.espacos.map(function(e){return '<option value="'+esc(e.nome)+'">'}).join('');
+  var gs=JORNADA.grupos.map(function(g,i){return '<option value="'+i+'"'+(i===e0.g?' selected':'')+'>'+esc(g.nome)+'</option>'}).join('');
+  var h='<div class="panel" id="panel"><h3>Editar ação</h3><div class="fg">';
+  h+='<label class="w2">Ação<input id="j-acao" value="'+esc(t.acao)+'"></label>';
+  h+='<label>Espaço<input id="j-esp" list="dl-esp" value="'+esc(e0.nome)+'"><datalist id="dl-esp">'+dl+'</datalist></label>';
+  h+='<label>Grupo (se o espaço for novo)<select id="j-grp">'+gs+'</select></label>';
+  h+='<label>Tipo<select id="j-tipo"><option value="tarefa"'+(!marco?' selected':'')+'>Ação com duração</option><option value="marco"'+(marco?' selected':'')+'>Marco (um horário)</option></select></label>';
+  h+='<label>Início<input id="j-ini" type="time" step="900" value="'+t.ini+'"></label>';
+  h+='<label>Fim<input id="j-fim" type="time" step="900" value="'+t.fim+'"></label>';
+  h+='<label class="w2">Nota<textarea id="j-nota">'+esc(t.nota)+'</textarea></label>';
+  h+='</div><div class="acts"><button class="btn" data-act="japlicar">Aplicar</button><button class="btn sec" data-act="jfechar">Fechar</button><span class="sp"></span>';
+  h+=estado.jconf?'<button class="btn bad" data-act="jexcluir2">Confirmar exclusão</button><button class="btn sec" data-act="jcancela">Cancelar</button>':'<button class="btn sec" data-act="jexcluir">Excluir ação</button>';
+  return h+'</div></div>';
+}
+function renderJornada(){
+  var ed=editando();
+  var h='<div class="hyp"><b>Proposta inicial para discussão.</b> Espaços e clusters vêm da reunião de 23/10; os horários são estimativas e as capacidades ainda não foram levantadas com a Property.</div>';
+  h+='<div style="margin-top:16px">'+kpisJ()+'</div>';
+  h+='<div class="tools"><div class="seg" role="group" aria-label="Filtrar por grupo"><button data-jg="todos" aria-pressed="'+(estado.jg==="todos")+'">Todos</button>'+JORNADA.grupos.map(function(g,i){return '<button data-jg="'+i+'" aria-pressed="'+(estado.jg===String(i))+'">'+esc(g.curto||g.nome)+'</button>'}).join('')+'</div>';
+  h+='<div class="go">'+(ed?'<button data-act="enova">+ Adicionar espaço</button><button data-act="jnova">+ Adicionar ação</button>':'')+'</div></div>';
+  h+='<div class="legend">'+JORNADA.grupos.map(function(g,i){return '<span><i class="sw g'+(i%4)+'"></i>'+esc(g.nome)+'</span>'}).join('')+'<span><i class="dm"></i>Marco</span></div>';
+  if(ed)h+='<p class="hint"><span class="dot"></span>Modo edição: arraste uma barra para mover (de 15 em 15 minutos), puxe as pontas para mudar início e fim, e clique para editar nome, espaço e horários; clique no nome de um espaço para renomear, mover ou excluir.</p>';
+  if(msg)h+='<div class="toast" role="status">'+esc(msg)+'</div>';
+  h+='<div class="jcard" style="margin-top:12px"><div class="gts" id="gts">'+ganttJ()+'</div><div class="tip" id="tip" hidden></div></div>';
+  h+=panelJ()+panelE();
+  h+='<p class="note">Cada linha é um espaço da Mata e cada barra, uma ação, em intervalos de 15 minutos; ações simultâneas no mesmo espaço aparecem em linhas empilhadas. Os horários após a meia-noite pertencem à madrugada seguinte. Espaços, clusters e restrições vêm da reunião de alinhamento RDN × Mata de 23/10; as capacidades de praça, Espaços 1 a 4, Sala Acima, Téra e sala de eventos ainda precisam ser levantadas na reunião operacional com a Property.</p>';
+  return h;
+}
+function insEsp(e){
+  var i=JORNADA.espacos.indexOf(e);if(i>=0)JORNADA.espacos.splice(i,1);
+  var pos=0;JORNADA.espacos.forEach(function(x,k){if(x.g<=e.g)pos=k+1});
+  JORNADA.espacos.splice(pos,0,e);
+}
+function moverE(dir){
+  var i=JORNADA.espacos.findIndex(function(x){return x.id===estado.esel});if(i<0)return;
+  var j=i+dir;if(j<0||j>=JORNADA.espacos.length||JORNADA.espacos[j].g!==JORNADA.espacos[i].g)return;
+  var t=JORNADA.espacos[i];JORNADA.espacos[i]=JORNADA.espacos[j];JORNADA.espacos[j]=t;marca();
+}
+function panelE(){
+  if(!editando()||!estado.esel)return '';
+  var novo=estado.esel==="novo",e=novo?{nome:"",g:estado.jg!=="todos"?(parseInt(estado.jg,10)||0):0}:jesp(estado.esel);
+  if(!e)return '';
+  var n=novo?0:JORNADA.itens.filter(function(i){return i.espaco===e.id}).length;
+  var gs=JORNADA.grupos.map(function(g,i){return '<option value="'+i+'"'+(i===e.g?' selected':'')+'>'+esc(g.nome)+'</option>'}).join('');
+  var h='<div class="panel" id="panel"><h3>'+(novo?'Novo espaço':'Editar espaço')+'</h3><div class="fg">';
+  h+='<label class="w2">Nome do espaço<input id="e-nome" value="'+esc(e.nome)+'" placeholder="Ex.: Jardim dos Amigos"></label>';
+  h+='<label>Grupo<select id="e-grp">'+gs+'</select></label></div>';
+  h+='<div class="acts"><button class="btn" data-act="eaplicar">'+(novo?'Adicionar espaço':'Aplicar')+'</button><button class="btn sec" data-act="efechar">Fechar</button>';
+  if(!novo)h+='<button class="btn sec" data-act="esobe">↑ Subir</button><button class="btn sec" data-act="edesce">↓ Descer</button>';
+  h+='<span class="sp"></span>';
+  if(!novo){
+    if(n)h+='<span class="note" style="margin:0">'+n+(n===1?' ação neste espaço: remova-a antes de excluir.':' ações neste espaço: remova-as antes de excluir.')+'</span>';
+    else h+=estado.econf?'<button class="btn bad" data-act="eexcluir2">Confirmar exclusão</button><button class="btn sec" data-act="ecancela">Cancelar</button>':'<button class="btn sec" data-act="eexcluir">Excluir espaço</button>';
+  }
+  return h+'</div></div>';
+}
+function lerE(){
+  var g=function(id){return document.getElementById(id)};
+  var nome=g("e-nome").value.trim()||"Novo espaço",gi=parseInt(g("e-grp").value,10)||0;
+  if(estado.esel==="novo"){
+    var e={id:novoIdJ("e",JORNADA.espacos),nome:nome,g:gi};
+    insEsp(e);estado.jult=e.id;marca();return;
+  }
+  var e0=jesp(estado.esel);if(!e0)return;
+  e0.nome=nome;if(e0.g!==gi){e0.g=gi;insEsp(e0)}
+  estado.jult=e0.id;marca();
+}
+function lerJ(){
+  var t=jbyId(estado.jsel);if(!t)return;
+  var g=function(id){return document.getElementById(id)};
+  var snap=function(v,fb){return Math.round(hm(v||fb)/15)*15};
+  t.acao=g("j-acao").value.trim()||"Nova ação";
+  var nome=g("j-esp").value.trim(),e=JORNADA.espacos.find(function(x){return x.nome.toLowerCase()===nome.toLowerCase()});
+  if(!e&&nome){
+    var gi=parseInt(g("j-grp").value,10)||0;
+    e={id:novoIdJ("e",JORNADA.espacos),nome:nome,g:gi};
+    insEsp(e);
+  }
+  if(e)t.espaco=e.id;
+  t.tipo=g("j-tipo").value;
+  var a=snap(g("j-ini").value,t.ini),b=snap(g("j-fim").value,t.fim);
+  if(t.tipo==="marco")b=a;else if(b<=a)b=a+15;
+  t.ini=mh(a);t.fim=mh(b);
+  t.nota=g("j-nota").value.trim();
+  normalizaJ();marca();
+}
+function render(){
+  calc();
+  var s0=document.getElementById("gts");if(s0){estado.sl=s0.scrollLeft;estado.st=s0.scrollTop}
+  if(estado.rs){estado.sl=0;estado.st=0;estado.rs=0}
+  var app=document.getElementById("app");
+  var tabs='<nav role="tablist" id="tabs">'+ABAS.map(function(a){return '<button role="tab" aria-selected="'+(a[0]===estado.aba)+'" data-aba="'+a[0]+'">'+a[1]+'</button>'}).join('')+'</nav>';
+  var body=estado.aba==="retro"?renderRetro():estado.aba==="jornada"?renderJornada():estado.aba==="escopo"?vazio("Escopo","Aqui entram a jornada do convidado, os ambientes da Mata São Paulo, a curadoria da edição e o line-up, no mesmo formato de fichas do Painel Spanta."):vazio("Comercial","Aqui entram as marcas em prospecção, categorias e cotas, status de negociação e responsáveis, no mesmo formato do Painel Spanta.");
+  app.innerHTML=acoesTopo()+topo()+tabs+'<main id="main"><section class="page">'+body+'</section></main>'+barraSalvar();
+  var s=document.getElementById("gts");
+  if(s){s.scrollLeft=estado.sl;s.scrollTop=estado.st}
+}
+function irPara(ms){
+  var s=document.getElementById("gts");if(!s)return;
+  s.scrollTo({left:Math.max(0,Math.round((ms-GSTART)/DAY)*DW-2*DW),behavior:"smooth"});
+}
+function mostra(el){
+  var tip=document.getElementById("tip");if(!tip||drag)return;
+  var html;
+  if(el.dataset.jid){
+    var j=jbyId(el.dataset.jid);if(!j)return;
+    var ej=jesp(j.espaco)||{nome:""},ja=hm(j.ini),jb=hm(j.fim);
+    html='<b>'+esc(j.acao)+'</b><span>'+(j.tipo==="marco"?mh(ja):mh(ja)+" – "+mh(jb)+" · "+durJ(jb-ja))+'</span><span>'+esc(ej.nome)+'</span>'+(j.nota?'<p>'+esc(j.nota)+'</p>':'');
+  }else if(el.dataset.id){
+    var r=ROWS.find(function(x){return x.id===el.dataset.id});if(!r)return;
+    html='<b>'+esc(r.tarefa)+'</b><span>'+r.per+' · '+r.dl+' · '+esc(r.responsavel)+'</span><span>'+SITNOME[r.sit]+(r.tipo==="marco"?"":" · "+(r.sit==="done"?100:(+r.avanco||0))+"%")+'</span>'+(r.nota?'<p>'+esc(r.nota)+'</p>':'');
+  }else if(el.dataset.tip){
+    html='<b>'+esc(el.dataset.tip)+'</b><span>'+esc(el.dataset.sub||"")+'</span>';
+  }else return;
+  tip.innerHTML=html;tip.hidden=false;
+  var cw=tip.parentNode.getBoundingClientRect(),er=el.getBoundingClientRect();
+  var x=er.left-cw.left,y=er.bottom-cw.top+8;
+  x=Math.max(8,Math.min(x,cw.width-tip.offsetWidth-8));
+  if(y+tip.offsetHeight>cw.height)y=Math.max(8,er.top-cw.top-tip.offsetHeight-8);
+  tip.style.left=x+"px";tip.style.top=y+"px";
+}
+function esconde(){var t=document.getElementById("tip");if(t)t.hidden=true}
+function marca(){dirty++;msg=""}
+
+/* ---- arrastar ---- */
+var drag=null;
+document.addEventListener("pointerdown",function(e){
+  if(!editando())return;
+  var jx=e.target.closest(".jb[data-jid],.jm[data-jid]");
+  if(jx){
+    var jt=jbyId(jx.dataset.jid);if(!jt)return;
+    var jmc=jt.tipo==="marco";
+    var jmode=jmc?"mov":e.target.classList.contains("hl")?"ini":e.target.classList.contains("hr")?"fim":"mov";
+    drag={j:true,id:jt.id,mode:jmode,x0:e.clientX,i0:hm(jt.ini),f0:hm(jt.fim),el:jx,lab:jmc?jx.nextElementSibling:null,moved:false,ni:hm(jt.ini),nf:hm(jt.fim),marco:jmc};
+    try{jx.setPointerCapture(e.pointerId)}catch(_){}
+    esconde();e.preventDefault();return;
+  }
+  var b=e.target.closest(".bar[data-id],.ms[data-id]");if(!b)return;
+  var t=byId(b.dataset.id);if(!t)return;
+  var mode=e.target.classList.contains("hl")?"ini":e.target.classList.contains("hr")?"fim":"mov";
+  if(t.tipo==="marco")mode="mov";
+  drag={id:t.id,mode:mode,x0:e.clientX,i0:u(t.inicio),f0:u(t.fim),el:b,moved:false,ni:u(t.inicio),nf:u(t.fim),marco:t.tipo==="marco"};
+  try{b.setPointerCapture(e.pointerId)}catch(_){}
+  esconde();e.preventDefault();
+});
+document.addEventListener("pointermove",function(e){
+  if(!drag)return;
+  var dx=e.clientX-drag.x0;if(Math.abs(dx)>3)drag.moved=true;
+  if(drag.j){
+    var dq=Math.round(dx/JW)*15,jni=drag.i0,jnf=drag.f0,span=drag.f0-drag.i0;
+    if(drag.mode==="mov"){jni=drag.i0+dq;jnf=drag.f0+dq;if(jni<JS0){jni=JS0;jnf=jni+span}if(jnf>JE0){jnf=JE0;jni=jnf-span}}
+    else if(drag.mode==="ini"){jni=Math.max(JS0,Math.min(drag.i0+dq,drag.f0-15))}
+    else{jnf=Math.min(JE0,Math.max(drag.f0+dq,drag.i0+15))}
+    drag.ni=jni;drag.nf=jnf;
+    var jxp=(jni-JS0)/15*JW;
+    if(drag.marco){drag.el.style.left=jxp+"px";if(drag.lab)drag.lab.style.left=(jxp+14)+"px"}
+    else{drag.el.style.left=(jxp+1)+"px";drag.el.style.width=(Math.max(1,(jnf-jni)/15)*JW-2)+"px"}
+    return;
+  }
+  var dd=Math.round(dx/DW),ni=drag.i0,nf=drag.f0;
+  if(drag.mode==="mov"){ni=drag.i0+dd*DAY;nf=drag.f0+dd*DAY}
+  else if(drag.mode==="ini"){ni=Math.min(drag.i0+dd*DAY,drag.f0)}
+  else{nf=Math.max(drag.f0+dd*DAY,drag.i0)}
+  drag.ni=ni;drag.nf=nf;
+  var left=Math.round((ni-GSTART)/DAY)*DW,len=(Math.round((nf-ni)/DAY)+1)*DW;
+  if(drag.marco)drag.el.style.left=(left+DW/2)+"px";
+  else{drag.el.style.left=(left+2)+"px";drag.el.style.width=(len-4)+"px"}
+});
+function fimDrag(e){
+  if(!drag)return;var d=drag;drag=null;
+  if(d.j){
+    if(!d.moved){estado.jsel=d.id;estado.jconf=false;estado.esel=null;render();var pj=document.getElementById("panel");if(pj)pj.scrollIntoView({block:"nearest",behavior:"smooth"});return}
+    var jt2=jbyId(d.id);
+    if(jt2&&(d.ni!==d.i0||d.nf!==d.f0)){jt2.ini=mh(d.ni);jt2.fim=jt2.tipo==="marco"?mh(d.ni):mh(d.nf);normalizaJ();marca()}
+    render();return;
+  }
+  if(!d.moved){estado.sel=d.id;estado.confirmDel=false;render();var p=document.getElementById("panel");if(p)p.scrollIntoView({block:"nearest",behavior:"smooth"});return}
+  var t=byId(d.id);
+  if(t&&(d.ni!==d.i0||d.nf!==d.f0)){t.inicio=iso(d.ni);t.fim=iso(d.nf);if(t.tipo==="marco")t.fim=t.inicio;normaliza();marca()}
+  render();
+}
+document.addEventListener("pointerup",fimDrag);
+document.addEventListener("pointercancel",function(){if(drag){drag=null;render()}});
+
+/* ---- publicar ---- */
+function J(o){return JSON.stringify(o).replace(/</g,"\\u003c")}
+function conteudo(extra){
+  var src=document.getElementById("gm-main").textContent;
+  var a=src.indexOf("/*GM_DATA*/"),b=src.indexOf("/*GM_END*/");
+  var data="/*GM_DATA*/\nvar META="+J(META)+";\nvar TAREFAS="+J(TAREFAS)+";\nvar DATAS="+J(DATAS)+";\nvar JORNADA="+J(JORNADA)+";\n"+(extra||"");
+  var script=src.slice(0,a)+data+src.slice(b);
+  var css=document.getElementById("gm-style").textContent;
+  return HEADTAGS+'<style id="gm-style">'+css+'</style>\n<div class="wrap" id="app"></div>\n<script id="gm-main">'+script+'<\/script>\n';
+}
+function agora(){var d=new Date(),p=function(n){return String(n).padStart(2,"0")};return p(d.getDate())+"/"+p(d.getMonth()+1)+"/"+d.getFullYear()+" "+p(d.getHours())+":"+p(d.getMinutes())}
+function salvarPublicar(){
+  if(!API||salvando)return;
+  salvando=true;render();
+  var oldM=JSON.stringify(META);
+  META.versao=(META.versao||1)+1;META.atualizado=agora();
+  var html=SK_HEAD+"\n"+conteudo()+"\n</body></html>";
+  API.publish(html).then(function(){
+    /* a página recarrega na versão nova */
+  },function(err){
+    META=JSON.parse(oldM);salvando=false;
+    var c=err&&err.code;
+    msg=c==="conflict"?"Outra pessoa publicou uma versão nova antes de você. Recarregue a página e refaça as alterações.":c==="not_writer"||c==="not_granted"?"Seu acesso não permite editar este painel.":c==="too_large"?"O painel ficou grande demais para publicar.":"Não foi possível publicar agora. Suas alterações continuam na tela; tente de novo.";
+    render();
+  });
+}
+
+/* ---- eventos ---- */
+function novoId(){var m=0;TAREFAS.forEach(function(t){var n=parseInt(String(t.id).replace(/\D/g,""),10);if(n>m)m=n});return "t"+String(m+1).padStart(2,"0")}
+function lerPainel(){
+  var t=byId(estado.sel);if(!t)return;
+  var g=function(id){return document.getElementById(id)};
+  var tarefa=g("f-tarefa").value.trim()||"Nova entrega";
+  var fase=g("f-fase").value.trim()||t.fase;
+  var tipo=g("f-tipo").value;
+  var ini=g("f-ini").value||t.inicio,fim=g("f-fim").value||t.fim;
+  if(tipo==="marco")fim=ini;
+  if(u(fim)<u(ini)){var x=ini;ini=fim;fim=x}
+  var st=g("f-st").value,av=Math.max(0,Math.min(100,parseInt(g("f-av").value,10)||0));
+  if(st===C)av=100;
+  t.tarefa=tarefa;t.fase=fase;t.responsavel=g("f-resp").value.trim();t.tipo=tipo;t.inicio=ini;t.fim=fim;t.status=st;t.avanco=av;t.nota=g("f-nota").value.trim();
+  normaliza();marca();
+}
+function mover(dir){
+  var i=TAREFAS.findIndex(function(t){return t.id===estado.sel});if(i<0)return;
+  var j=i+dir;if(j<0||j>=TAREFAS.length||TAREFAS[j].fase!==TAREFAS[i].fase)return;
+  var tmp=TAREFAS[i];TAREFAS[i]=TAREFAS[j];TAREFAS[j]=tmp;marca();
+}
+function copiar(){
+  var el=document.getElementById("lk"),m=document.getElementById("pop-msg");
+  var ok=function(){if(m)m.textContent="Link copiado."};
+  var fb=function(){if(el){el.focus();el.select();if(m)m.textContent="Selecione e copie o link (Ctrl+C)."}};
+  try{navigator.clipboard.writeText(LINK_VIEW).then(ok,fb)}catch(_){fb()}
+}
+function baixar(){
+  var m=document.getElementById("pop-msg");
+  var html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body>\n'+conteudo("var STANDALONE_FLAG=1;\n")+"</body></html>";
+  claude.use("downloads").then(function(dl){
+    if(!dl){if(m)m.textContent="Download indisponível neste modo.";return}
+    return dl.save({filename:"painel-grand-masque.html",data:html}).then(function(){if(m)m.textContent="Arquivo HTML gerado com o estado atual."},function(){if(m)m.textContent="Download cancelado."});
+  });
+}
+document.addEventListener("click",function(e){
+  var a=e.target.closest("[data-aba]");if(a){if(a.dataset.aba!==estado.aba){estado.rs=1;estado.sel=null;estado.jsel=null;estado.esel=null}estado.aba=a.dataset.aba;render();return}
+  var f=e.target.closest("[data-fase]");if(f){estado.fase=f.dataset.fase;render();return}
+  var jg=e.target.closest("[data-jg]");if(jg){estado.jg=jg.dataset.jg;render();return}
+  var g=e.target.closest("[data-go]");if(g){irPara(g.dataset.go==="hoje"?HOJE:EV);return}
+  var o=e.target.closest("[data-open]");if(o&&editando()){estado.sel=o.dataset.open;estado.confirmDel=false;render();var p=document.getElementById("panel");if(p)p.scrollIntoView({block:"nearest",behavior:"smooth"});return}
+  var eo=e.target.closest("[data-eopen]");if(eo&&editando()){estado.esel=eo.dataset.eopen;estado.econf=false;estado.jsel=null;render();var pe=document.getElementById("panel");if(pe)pe.scrollIntoView({block:"nearest",behavior:"smooth"});return}
+  var b=e.target.closest("[data-act]");if(!b)return;
+  var act=b.dataset.act;
+  if(act==="enova"){estado.esel="novo";estado.econf=false;estado.jsel=null;render();var pn2=document.getElementById("panel");if(pn2){pn2.scrollIntoView({block:"nearest",behavior:"smooth"});var en=document.getElementById("e-nome");if(en)en.focus()}return}
+  if(act==="eaplicar"){var nv=estado.esel==="novo";lerE();if(nv)estado.jg="todos";estado.esel=null;estado.econf=false;render();return}
+  if(act==="efechar"){estado.esel=null;estado.econf=false;render();return}
+  if(act==="esobe"){lerE();moverE(-1);render();return}
+  if(act==="edesce"){lerE();moverE(1);render();return}
+  if(act==="eexcluir"){estado.econf=true;render();return}
+  if(act==="ecancela"){estado.econf=false;render();return}
+  if(act==="eexcluir2"){JORNADA.espacos=JORNADA.espacos.filter(function(x){return x.id!==estado.esel});estado.esel=null;estado.econf=false;marca();render();return}
+  if(act==="jnova"){
+    var ve=jesp(estado.jult);if(!ve||(estado.jg!=="todos"&&String(ve.g)!==estado.jg))ve=JORNADA.espacos.filter(function(x){return estado.jg==="todos"||String(x.g)===estado.jg})[0]||JORNADA.espacos[0];
+    estado.esel=null;
+    var jid=novoIdJ("j",JORNADA.itens);
+    JORNADA.itens.push({id:jid,espaco:ve.id,acao:"Nova ação",ini:"20:00",fim:"21:00",tipo:"tarefa",nota:""});
+    normalizaJ();marca();estado.jsel=jid;estado.jult=ve.id;estado.jconf=false;render();
+    var pn=document.getElementById("panel");if(pn){pn.scrollIntoView({block:"nearest",behavior:"smooth"});var ja=document.getElementById("j-acao");if(ja){ja.focus();ja.select()}}
+    return;
+  }
+  if(act==="japlicar"){lerJ();render();return}
+  if(act==="jfechar"){estado.jsel=null;estado.jconf=false;render();return}
+  if(act==="jexcluir"){estado.jconf=true;render();return}
+  if(act==="jcancela"){estado.jconf=false;render();return}
+  if(act==="jexcluir2"){JORNADA.itens=JORNADA.itens.filter(function(x){return x.id!==estado.jsel});estado.jsel=null;estado.jconf=false;marca();render();return}
+  if(act==="olho"){popOpen=!popOpen;render();return}
+  if(act==="alterna"){modoVer=!modoVer;estado.sel=null;estado.jsel=null;estado.esel=null;render();return}
+  if(act==="copia"){copiar();return}
+  if(act==="baixa"){baixar();return}
+  if(act==="nova"){
+    var fase=estado.fase!=="todas"?estado.fase:(FASES[0]||"Planejamento");
+    var id=novoId(),h=iso(Math.max(HOJE,u("2026-10-19")));
+    TAREFAS.push({id:id,fase:fase,tarefa:"Nova entrega",responsavel:"",inicio:h,fim:iso(u(h)+4*DAY),status:N,avanco:0,tipo:"tarefa",nota:"",evento:false});
+    normaliza();marca();estado.sel=id;estado.confirmDel=false;render();
+    var p=document.getElementById("panel");if(p){p.scrollIntoView({block:"nearest",behavior:"smooth"});var t=document.getElementById("f-tarefa");if(t){t.focus();t.select()}}
+    return;
+  }
+  if(act==="aplicar"){lerPainel();render();return}
+  if(act==="fechar"){estado.sel=null;estado.confirmDel=false;render();return}
+  if(act==="sobe"){lerPainel();mover(-1);render();return}
+  if(act==="desce"){lerPainel();mover(1);render();return}
+  if(act==="excluir"){estado.confirmDel=true;render();return}
+  if(act==="cancela"){estado.confirmDel=false;render();return}
+  if(act==="excluir2"){
+    TAREFAS=TAREFAS.filter(function(t){return t.id!==estado.sel});estado.sel=null;estado.confirmDel=false;marca();render();return}
+  if(act==="descarta"){TAREFAS=JSON.parse(ORIG);JORNADA=JSON.parse(ORIGJ);dirty=0;estado.sel=null;estado.jsel=null;estado.esel=null;msg="";render();return}
+  if(act==="salva"){salvarPublicar();return}
+});
+document.addEventListener("mouseover",function(e){var t=e.target.closest("[data-id],[data-jid],[data-tip]");if(t)mostra(t);else esconde()});
+document.addEventListener("focusin",function(e){var t=e.target.closest("[data-id],[data-jid]");if(t)mostra(t)});
+document.addEventListener("focusout",esconde);
+document.addEventListener("scroll",esconde,true);
+document.addEventListener("keydown",function(e){if(e.key==="Escape"&&popOpen){popOpen=false;render()}});
+
+document.getElementById("app").classList.add("showg");
+render();
+(function(){
+  if(typeof claude==="undefined"||!claude||!claude.use||STANDALONE)return;
+  Promise.all([claude.use("user"),claude.use("artifact")]).then(function(r){
+    var us=r[0];API=r[1];
+    if(!us||!API)return;
+    return us.canEdit().then(function(ok){
+      if(ok){podeEditar=true;modoVer=ABERTO_VIEW;render()}
+    });
+  }).catch(function(){});
+})();
+</script>
+</body></html>
